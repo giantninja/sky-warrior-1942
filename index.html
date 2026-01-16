@@ -1471,42 +1471,157 @@
         }
         
         function drawBackground() {
-            // Sky gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-            gradient.addColorStop(0, COLORS.sky);
-            gradient.addColorStop(1, COLORS.water);
-            ctx.fillStyle = gradient;
+            const time = Date.now();
+            
+            // Rich sky gradient - dawn/dusk atmosphere
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+            skyGradient.addColorStop(0, '#0a0a1a');      // Deep space blue
+            skyGradient.addColorStop(0.2, '#1a1a3a');    // Dark navy
+            skyGradient.addColorStop(0.5, '#2a3a5a');    // Mid blue
+            skyGradient.addColorStop(0.7, '#1a4a6a');    // Ocean blue
+            skyGradient.addColorStop(1, '#0a3a5a');      // Deep water
+            ctx.fillStyle = skyGradient;
             ctx.fillRect(0, 0, WIDTH, HEIGHT);
             
-            // Stars (distant)
-            ctx.fillStyle = '#ffffff';
+            // Distant stars (twinkling)
             stars.forEach(star => {
-                ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 500 + star.x) * 0.2;
-                ctx.fillRect(star.x, star.y, star.size, star.size);
-            });
-            ctx.globalAlpha = 1;
-            
-            // Clouds
-            clouds.forEach(cloud => {
-                ctx.fillStyle = COLORS.cloud;
-                ctx.globalAlpha = 0.3;
+                const twinkle = 0.3 + Math.sin(time / 300 + star.x * 10 + star.y) * 0.3;
+                ctx.globalAlpha = twinkle;
                 
-                // Pixelated cloud shape
-                const px = cloud.width / 6;
-                ctx.fillRect(cloud.x + px, cloud.y, px * 4, cloud.height * 0.6);
-                ctx.fillRect(cloud.x, cloud.y + cloud.height * 0.3, px * 6, cloud.height * 0.4);
-                ctx.fillRect(cloud.x + px * 2, cloud.y + cloud.height * 0.5, px * 2, cloud.height * 0.4);
+                // Star glow
+                const starGrad = ctx.createRadialGradient(
+                    star.x, star.y, 0,
+                    star.x, star.y, star.size * 2
+                );
+                starGrad.addColorStop(0, '#ffffff');
+                starGrad.addColorStop(0.5, 'rgba(200, 220, 255, 0.5)');
+                starGrad.addColorStop(1, 'rgba(100, 150, 255, 0)');
+                ctx.fillStyle = starGrad;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Star core
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(star.x - 0.5, star.y - 0.5, star.size, star.size);
             });
             ctx.globalAlpha = 1;
             
-            // Water wave pattern
-            ctx.fillStyle = COLORS.waterLight;
-            for (let y = HEIGHT - 100; y < HEIGHT; y += 20) {
-                for (let x = 0; x < WIDTH; x += 30) {
-                    const offset = Math.sin((scrollY + y) / 30 + x / 50) * 5;
-                    ctx.fillRect(x + offset, y, 15, 2);
+            // Ocean water with realistic waves
+            const waterStartY = HEIGHT * 0.5;
+            
+            // Deep water gradient
+            const waterGrad = ctx.createLinearGradient(0, waterStartY, 0, HEIGHT);
+            waterGrad.addColorStop(0, 'rgba(10, 60, 100, 0.3)');
+            waterGrad.addColorStop(0.5, 'rgba(5, 40, 80, 0.5)');
+            waterGrad.addColorStop(1, 'rgba(0, 30, 60, 0.7)');
+            ctx.fillStyle = waterGrad;
+            ctx.fillRect(0, waterStartY, WIDTH, HEIGHT - waterStartY);
+            
+            // Animated wave layers
+            for (let layer = 0; layer < 4; layer++) {
+                const layerAlpha = 0.15 - layer * 0.03;
+                const layerSpeed = 1 + layer * 0.5;
+                const layerY = waterStartY + layer * 30;
+                
+                ctx.strokeStyle = `rgba(100, 180, 220, ${layerAlpha})`;
+                ctx.lineWidth = 2 - layer * 0.3;
+                ctx.beginPath();
+                
+                for (let x = 0; x < WIDTH; x += 5) {
+                    const waveOffset = Math.sin((scrollY * layerSpeed + x) / 40 + layer) * 8;
+                    const waveOffset2 = Math.sin((scrollY * layerSpeed + x) / 25 + layer * 2) * 4;
+                    const y = layerY + waveOffset + waveOffset2;
+                    
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
+                ctx.stroke();
             }
+            
+            // Light reflections on water
+            for (let i = 0; i < 8; i++) {
+                const reflectX = (i * 45 + scrollY * 0.3) % (WIDTH + 40) - 20;
+                const reflectY = waterStartY + 50 + Math.sin(time / 400 + i) * 30;
+                const reflectAlpha = 0.1 + Math.sin(time / 200 + i * 2) * 0.05;
+                
+                ctx.fillStyle = `rgba(150, 200, 255, ${reflectAlpha})`;
+                ctx.beginPath();
+                ctx.ellipse(reflectX, reflectY, 15, 3, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Fluffy clouds with depth
+            clouds.forEach((cloud, index) => {
+                const cloudY = cloud.y;
+                const cloudX = cloud.x;
+                const w = cloud.width;
+                const h = cloud.height;
+                
+                // Cloud shadow
+                ctx.globalAlpha = 0.1;
+                ctx.fillStyle = '#000';
+                drawCloudShape(cloudX + 3, cloudY + 3, w, h);
+                
+                // Main cloud body
+                ctx.globalAlpha = 0.6 + Math.sin(time / 1000 + index) * 0.1;
+                
+                // Cloud gradient for depth
+                const cloudGrad = ctx.createLinearGradient(cloudX, cloudY, cloudX, cloudY + h);
+                cloudGrad.addColorStop(0, '#ffffff');
+                cloudGrad.addColorStop(0.5, '#e8e8f0');
+                cloudGrad.addColorStop(1, '#c0c8d8');
+                ctx.fillStyle = cloudGrad;
+                
+                drawCloudShape(cloudX, cloudY, w, h);
+                
+                // Cloud highlight
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = '#ffffff';
+                drawCloudShape(cloudX + 2, cloudY - 1, w * 0.7, h * 0.5);
+            });
+            ctx.globalAlpha = 1;
+            
+            // Atmospheric haze at horizon
+            const hazeGrad = ctx.createLinearGradient(0, waterStartY - 30, 0, waterStartY + 50);
+            hazeGrad.addColorStop(0, 'rgba(100, 150, 200, 0)');
+            hazeGrad.addColorStop(0.5, 'rgba(100, 150, 200, 0.15)');
+            hazeGrad.addColorStop(1, 'rgba(100, 150, 200, 0)');
+            ctx.fillStyle = hazeGrad;
+            ctx.fillRect(0, waterStartY - 30, WIDTH, 80);
+            
+            // Distant island silhouettes (very subtle)
+            ctx.fillStyle = 'rgba(20, 40, 60, 0.3)';
+            const islandY = waterStartY + 20 + Math.sin(scrollY / 200) * 5;
+            
+            // Island 1
+            ctx.beginPath();
+            ctx.moveTo(-20 + (scrollY * 0.1) % (WIDTH + 100), islandY + 30);
+            ctx.quadraticCurveTo(30 + (scrollY * 0.1) % (WIDTH + 100), islandY - 15, 
+                                  80 + (scrollY * 0.1) % (WIDTH + 100), islandY + 30);
+            ctx.fill();
+            
+            // Island 2
+            ctx.beginPath();
+            ctx.moveTo(180 + (scrollY * 0.15) % (WIDTH + 150), islandY + 25);
+            ctx.quadraticCurveTo(220 + (scrollY * 0.15) % (WIDTH + 150), islandY - 20, 
+                                  280 + (scrollY * 0.15) % (WIDTH + 150), islandY + 25);
+            ctx.fill();
+        }
+        
+        // Helper function to draw fluffy cloud shape
+        function drawCloudShape(x, y, w, h) {
+            ctx.beginPath();
+            // Main body with multiple circles for fluffy effect
+            ctx.arc(x + w * 0.25, y + h * 0.6, h * 0.5, 0, Math.PI * 2);
+            ctx.arc(x + w * 0.5, y + h * 0.4, h * 0.6, 0, Math.PI * 2);
+            ctx.arc(x + w * 0.75, y + h * 0.55, h * 0.45, 0, Math.PI * 2);
+            ctx.arc(x + w * 0.35, y + h * 0.35, h * 0.4, 0, Math.PI * 2);
+            ctx.arc(x + w * 0.65, y + h * 0.35, h * 0.35, 0, Math.PI * 2);
+            ctx.fill();
         }
         
         function drawHUD() {
