@@ -436,18 +436,9 @@
         let WIDTH, HEIGHT;
         
         function resizeCanvas() {
-            const aspectRatio = 16 / 9; // Widescreen aspect ratio
-            const maxWidth = window.innerWidth;
-            const maxHeight = window.innerHeight;
-            
-            // Calculate dimensions to fill screen while maintaining aspect ratio
-            let newWidth = maxWidth;
-            let newHeight = maxWidth / aspectRatio;
-            
-            if (newHeight > maxHeight) {
-                newHeight = maxHeight;
-                newWidth = maxHeight * aspectRatio;
-            }
+            // Width capped at 1200px, height fills available space
+            let newWidth = Math.min(window.innerWidth, 1200);
+            let newHeight = window.innerHeight;
             
             // Set internal resolution (scaled down for performance, rendered up)
             const internalScale = 0.5; // Internal resolution scale
@@ -796,12 +787,12 @@
                 label: 'NORMAL'
             },
             hard: {
-                enemySpeedMult: 1.3,
-                enemySpawnRate: 1.5,
-                enemyBulletSpeed: 1.3,
-                bossHealth: 1.5,
-                warmupTime: 15 * 60, // 15 seconds
-                scoreMultiplier: 1.5,
+                enemySpeedMult: 1.6,
+                enemySpawnRate: 2.0,
+                enemyBulletSpeed: 1.5,
+                bossHealth: 2.0,
+                warmupTime: 10 * 60, // 10 seconds
+                scoreMultiplier: 2.0,
                 label: 'HARD'
             }
         };
@@ -2452,7 +2443,7 @@
         }
         
         function spawnPowerup(x, y) {
-            if (Math.random() > 0.15) return; // 15% chance
+            if (Math.random() > 0.1) return; // 10% chance
             
             const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
             let color, icon;
