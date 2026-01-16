@@ -334,7 +334,7 @@
             
             <div class="instructions">
                 ARROW KEYS / WASD - MOVE<br>
-                SPACE / SHIFT - SHOOT | Z - BOMB<br>
+                SHIFT / SPACE - SHOOT | Z - BOMB<br>
                 P - PAUSE | M - MUSIC | ESC - HELP
             </div>
             <div class="start-prompt">PRESS SPACE OR CLICK TO START</div>
@@ -365,12 +365,12 @@
             <div class="help-section">
                 <div class="help-section-title">COMBAT</div>
                 <div class="help-row">
-                    <span class="help-key">SPACE / SHIFT</span>
-                    <span class="help-desc">Fire weapons</span>
+                    <span class="help-key">SHIFT / SPACE</span>
+                    <span class="help-desc">Shoot</span>
                 </div>
                 <div class="help-row">
                     <span class="help-key">Z</span>
-                    <span class="help-desc">Use bomb (clears screen)</span>
+                    <span class="help-desc">Fire bomb</span>
                 </div>
             </div>
             
@@ -920,6 +920,15 @@
                 color: '#e91e63',
                 pattern: 'shoot'
             },
+            miniboss: {
+                width: 40,
+                height: 35,
+                hp: 12,
+                speed: 1.2,
+                score: 1500,
+                color: '#9c27b0',
+                pattern: 'miniboss'
+            },
             boss: {
                 width: 60,
                 height: 50,
@@ -1362,6 +1371,10 @@
                 drawBoss(enemy);
                 return;
             }
+            if (enemy.type === 'miniboss') {
+                drawMiniboss(enemy);
+                return;
+            }
             
             // Draw enhanced enemy ship based on type
             drawEnemyShip(
@@ -1378,6 +1391,208 @@
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
             }
+        }
+        
+        function drawMiniboss(enemy) {
+            const w = enemy.width;
+            const h = enemy.height;
+            const x = enemy.x;
+            const y = enemy.y;
+            const time = Date.now();
+            const hpPercent = enemy.hp / ENEMY_TYPES.miniboss.hp;
+            
+            ctx.save();
+            
+            // ========== ACE FIGHTER - Twin-Engine Heavy Fighter ==========
+            
+            // Engine glow/thrust
+            const thrustIntensity = 0.5 + Math.sin(time / 50) * 0.3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = `rgba(255, 100, 0, ${thrustIntensity})`;
+            
+            // Twin engine nacelles with propeller blur
+            const engineOffsets = [-w * 0.35, w * 0.35];
+            engineOffsets.forEach((offset, idx) => {
+                const engineX = x + w/2 + offset;
+                const engineY = y + h * 0.6;
+                
+                // Propeller blur (spinning disc)
+                const propPhase = time / 20 + idx * Math.PI;
+                ctx.fillStyle = `rgba(200, 200, 200, ${0.4 + Math.sin(propPhase) * 0.2})`;
+                ctx.beginPath();
+                ctx.ellipse(engineX, engineY + 8, 6, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Engine body
+                ctx.fillStyle = '#2d2d3a';
+                ctx.fillRect(engineX - 5, engineY - 8, 10, 16);
+                
+                // Engine cowling
+                ctx.fillStyle = '#4a4a5a';
+                ctx.beginPath();
+                ctx.arc(engineX, engineY + 8, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Exhaust flame
+                const flameLen = 8 + Math.sin(time / 30 + idx) * 3;
+                const gradient = ctx.createLinearGradient(engineX, engineY - 8, engineX, engineY - 8 - flameLen);
+                gradient.addColorStop(0, '#ff6600');
+                gradient.addColorStop(0.5, '#ff3300');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(engineX - 4, engineY - 8);
+                ctx.lineTo(engineX + 4, engineY - 8);
+                ctx.lineTo(engineX, engineY - 8 - flameLen);
+                ctx.closePath();
+                ctx.fill();
+            });
+            
+            ctx.shadowBlur = 0;
+            
+            // Main fuselage - sleek twin-boom design
+            ctx.fillStyle = '#1a1a2e';
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.5, y + h);         // Nose
+            ctx.lineTo(x + w * 0.3, y + h * 0.7);   // Left nose taper
+            ctx.lineTo(x + w * 0.2, y + h * 0.3);   // Left body
+            ctx.lineTo(x + w * 0.35, y);            // Left tail
+            ctx.lineTo(x + w * 0.65, y);            // Right tail
+            ctx.lineTo(x + w * 0.8, y + h * 0.3);   // Right body
+            ctx.lineTo(x + w * 0.7, y + h * 0.7);   // Right nose taper
+            ctx.closePath();
+            ctx.fill();
+            
+            // Cockpit canopy - bubble style
+            const cockpitGlow = 0.6 + Math.sin(time / 200) * 0.2;
+            ctx.fillStyle = `rgba(100, 200, 255, ${cockpitGlow})`;
+            ctx.beginPath();
+            ctx.ellipse(x + w/2, y + h * 0.65, w * 0.12, h * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Cockpit frame
+            ctx.strokeStyle = '#3a3a4a';
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y + h * 0.5);
+            ctx.lineTo(x + w/2, y + h * 0.8);
+            ctx.stroke();
+            
+            // Wings - swept back aggressive design
+            ctx.fillStyle = '#2a2a3e';
+            // Left wing
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.25, y + h * 0.4);
+            ctx.lineTo(x - w * 0.1, y + h * 0.25);
+            ctx.lineTo(x - w * 0.15, y + h * 0.15);
+            ctx.lineTo(x + w * 0.3, y + h * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            // Right wing
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.75, y + h * 0.4);
+            ctx.lineTo(x + w * 1.1, y + h * 0.25);
+            ctx.lineTo(x + w * 1.15, y + h * 0.15);
+            ctx.lineTo(x + w * 0.7, y + h * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Wing mounted cannons
+            ctx.fillStyle = '#444';
+            ctx.fillRect(x - w * 0.12, y + h * 0.2, 3, 12);
+            ctx.fillRect(x + w * 1.09, y + h * 0.2, 3, 12);
+            
+            // Muzzle flash when shooting
+            if (enemy.shootTimer < 5) {
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(x - w * 0.1, y + h * 0.35, 3, 0, Math.PI * 2);
+                ctx.arc(x + w * 1.1, y + h * 0.35, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Twin tail fins
+            ctx.fillStyle = '#3a3a4e';
+            // Left fin
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.35, y);
+            ctx.lineTo(x + w * 0.25, y - h * 0.2);
+            ctx.lineTo(x + w * 0.4, y - h * 0.05);
+            ctx.closePath();
+            ctx.fill();
+            // Right fin
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.65, y);
+            ctx.lineTo(x + w * 0.75, y - h * 0.2);
+            ctx.lineTo(x + w * 0.6, y - h * 0.05);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Horizontal stabilizer
+            ctx.fillStyle = '#2a2a3a';
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.3, y + h * 0.05);
+            ctx.lineTo(x + w * 0.1, y - h * 0.05);
+            ctx.lineTo(x + w * 0.9, y - h * 0.05);
+            ctx.lineTo(x + w * 0.7, y + h * 0.05);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Ace insignia - skull emblem
+            ctx.fillStyle = '#9c27b0';
+            ctx.beginPath();
+            ctx.arc(x + w/2, y + h * 0.35, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff00ff';
+            ctx.beginPath();
+            ctx.arc(x + w/2 - 1.5, y + h * 0.33, 1, 0, Math.PI * 2);
+            ctx.arc(x + w/2 + 1.5, y + h * 0.33, 1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Damage effects
+            if (hpPercent < 0.5) {
+                // Smoke trail
+                ctx.fillStyle = `rgba(50, 50, 50, ${0.3 + Math.random() * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(x + w/2 + (Math.random() - 0.5) * 10, y - 5, 4 + Math.random() * 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            if (hpPercent < 0.25) {
+                // Fire from damaged engine
+                const damagedSide = Math.floor(time / 300) % 2;
+                const fireX = x + w/2 + engineOffsets[damagedSide];
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath();
+                ctx.arc(fireX, y + h * 0.5, 5 + Math.sin(time / 50) * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Health bar
+            const barWidth = w + 10;
+            const barHeight = 3;
+            const barX = x - 5;
+            const barY = y - 10;
+            
+            ctx.fillStyle = '#333';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            const healthColor = hpPercent > 0.5 ? '#9c27b0' : (hpPercent > 0.25 ? '#ff9800' : '#f44336');
+            ctx.fillStyle = healthColor;
+            ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+            
+            // Hit flash
+            if (enemy.hitFlash > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${enemy.hitFlash / 10})`;
+                ctx.fillRect(x - 5, y - 5, w + 10, h + 10);
+            }
+            
+            ctx.restore();
         }
         
         function drawBoss(boss) {
@@ -2349,6 +2564,8 @@
             let hp = enemyType.hp + Math.floor(difficulty / 3);
             if (type === 'boss') {
                 hp = Math.floor(ENEMY_TYPES.boss.hp * settings.bossHealth);
+            } else if (type === 'miniboss') {
+                hp = Math.floor(ENEMY_TYPES.miniboss.hp * settings.bossHealth * 0.8);
             }
             
             // Calculate speed with difficulty and warmup
@@ -2382,6 +2599,10 @@
             if (wave % 5 === 0) {
                 // Boss wave
                 spawnEnemy('boss', WIDTH / 2 - 30);
+                playSound('boss');
+            } else if (wave % 5 === 3 && wave >= 3) {
+                // Miniboss wave (wave 3, 8, 13, 18, etc.)
+                spawnEnemy('miniboss', WIDTH / 2 - 20);
                 playSound('boss');
             } else {
                 // Regular wave with formations
@@ -2587,8 +2808,8 @@
                 phase: 'flying', // 'flying', 'exploding', 'fading'
                 timer: 0,
                 radius: 0,
-                maxRadius: 120,
-                targetY: HEIGHT / 3, // Explode at upper third of screen
+                maxRadius: 145,
+                targetY: HEIGHT / 5, // Explode near top of screen
                 damageDealt: false
             });
         }
@@ -2601,8 +2822,8 @@
                     bomb.y -= bomb.speed;
                     bomb.timer++;
                     
-                    // Explode when reaching target or after time
-                    if (bomb.y <= bomb.targetY || bomb.timer > 60) {
+                    // Explode when reaching target or after time (90 frames = 1.5 seconds)
+                    if (bomb.y <= bomb.targetY || bomb.timer > 90) {
                         bomb.phase = 'exploding';
                         bomb.timer = 0;
                         playSound('bomb');
@@ -2850,6 +3071,82 @@
                                 size: 4,
                                 isEnemy: true
                             });
+                        }
+                        break;
+                    case 'miniboss':
+                        // Miniboss enters then hovers and strafes
+                        if (!enemy.enteredPosition) {
+                            if (enemy.y < 60) {
+                                enemy.y += enemy.speed;
+                            } else {
+                                enemy.enteredPosition = true;
+                                enemy.baseY = enemy.y;
+                                enemy.baseX = enemy.x;
+                            }
+                        } else {
+                            // Smooth strafe back and forth
+                            enemy.baseX += Math.cos(enemy.timer / 40) * 1.5;
+                            enemy.x = enemy.baseX;
+                            // Smooth vertical bob
+                            enemy.y = enemy.baseY + Math.sin(enemy.timer / 80) * 10;
+                            
+                            // Keep in bounds
+                            if (enemy.baseX < 10) enemy.baseX = 10;
+                            if (enemy.baseX > WIDTH - enemy.width - 10) enemy.baseX = WIDTH - enemy.width - 10;
+                            enemy.x = enemy.baseX;
+                            
+                            // Aggressive shooting pattern
+                            enemy.shootTimer++;
+                            if (enemy.shootTimer > 25 / difficulty && enemyBullets.length < 100) {
+                                enemy.shootTimer = 0;
+                                
+                                const attackType = Math.floor(enemy.timer / 80) % 3;
+                                switch (attackType) {
+                                    case 0: // Dual cannon burst
+                                        enemyBullets.push({
+                                            x: enemy.x + enemy.width * 0.2,
+                                            y: enemy.y + enemy.height,
+                                            speed: 4,
+                                            size: 4,
+                                            isEnemy: true
+                                        });
+                                        enemyBullets.push({
+                                            x: enemy.x + enemy.width * 0.8,
+                                            y: enemy.y + enemy.height,
+                                            speed: 4,
+                                            size: 4,
+                                            isEnemy: true
+                                        });
+                                        break;
+                                    case 1: // Aimed shot at player
+                                        const dx = player.x - (enemy.x + enemy.width/2);
+                                        const dy = player.y - (enemy.y + enemy.height);
+                                        const dist = Math.sqrt(dx*dx + dy*dy);
+                                        enemyBullets.push({
+                                            x: enemy.x + enemy.width / 2,
+                                            y: enemy.y + enemy.height,
+                                            vx: (dx / dist) * 4,
+                                            vy: (dy / dist) * 4,
+                                            speed: 4,
+                                            size: 5,
+                                            isEnemy: true
+                                        });
+                                        break;
+                                    case 2: // Triple spread
+                                        for (let i = -1; i <= 1; i++) {
+                                            enemyBullets.push({
+                                                x: enemy.x + enemy.width / 2,
+                                                y: enemy.y + enemy.height,
+                                                vx: i * 2,
+                                                vy: 4,
+                                                speed: 4,
+                                                size: 4,
+                                                isEnemy: true
+                                            });
+                                        }
+                                        break;
+                                }
+                            }
                         }
                         break;
                     case 'boss':
