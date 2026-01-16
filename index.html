@@ -576,6 +576,7 @@
         let stars = [];
         let clouds = [];
         let spawnTimeouts = []; // Track spawn timeouts for cleanup
+        let activeBombs = []; // Active bomb projectiles
         
         // Scrolling
         let scrollY = 0;
@@ -1172,31 +1173,176 @@
         
         function useBomb() {
             if (player.bombs <= 0) return;
+            if (activeBombs.length > 0) return; // Only one bomb at a time
+            
             player.bombs--;
+            playSound('shoot'); // Launch sound
             
-            playSound('bomb');
-            screenShake = 10;
-            
-            // Clear all non-boss enemies and damage bosses
-            enemies.forEach(enemy => {
-                if (!enemy) return;
-                if (enemy.type === 'boss') {
-                    // Damage boss
-                    enemy.hp -= 10;
-                    enemy.hitFlash = 5;
+            // Create bomb projectile
+            activeBombs.push({
+                x: player.x + player.width / 2,
+                y: player.y,
+                speed: 6,
+                phase: 'flying', // 'flying', 'exploding', 'fading'
+                timer: 0,
+                radius: 0,
+                maxRadius: 120,
+                targetY: HEIGHT / 3, // Explode at upper third of screen
+                damageDealt: false
+            });
+        }
+        
+        function updateBombs() {
+            for (let i = activeBombs.length - 1; i >= 0; i--) {
+                const bomb = activeBombs[i];
+                
+                if (bomb.phase === 'flying') {
+                    bomb.y -= bomb.speed;
+                    bomb.timer++;
+                    
+                    // Explode when reaching target or after time
+                    if (bomb.y <= bomb.targetY || bomb.timer > 60) {
+                        bomb.phase = 'exploding';
+                        bomb.timer = 0;
+                        playSound('bomb');
+                        screenShake = 15;
+                    }
+                } else if (bomb.phase === 'exploding') {
+                    bomb.timer++;
+                    // Expand radius quickly
+                    bomb.radius = Math.min(bomb.maxRadius, bomb.radius + 8);
+                    
+                    // Deal damage when radius reaches certain size (only once)
+                    if (!bomb.damageDealt && bomb.radius >= bomb.maxRadius * 0.5) {
+                        bomb.damageDealt = true;
+                        
+                        // Damage enemies in radius
+                        enemies.forEach((enemy, ei) => {
+                            if (!enemy) return;
+                            
+                            const dx = (enemy.x + enemy.width/2) - bomb.x;
+                            const dy = (enemy.y + enemy.height/2) - bomb.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            
+                            if (dist < bomb.maxRadius + enemy.width/2) {
+                                if (enemy.type === 'boss') {
+                                    enemy.hp -= 15;
+                                    enemy.hitFlash = 10;
+                                } else {
+                                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width);
+                                    score += enemy.score;
+                                    enemies[ei] = null;
+                                }
+                            }
+                        });
+                        enemies = enemies.filter(e => e !== null);
+                        
+                        // Clear enemy bullets in radius
+                        enemyBullets = enemyBullets.filter(bullet => {
+                            if (!bullet) return false;
+                            const dx = bullet.x - bomb.x;
+                            const dy = bullet.y - bomb.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            return dist > bomb.maxRadius;
+                        });
+                    }
+                    
+                    // Transition to fading
+                    if (bomb.timer > 30) {
+                        bomb.phase = 'fading';
+                        bomb.timer = 0;
+                    }
+                } else if (bomb.phase === 'fading') {
+                    bomb.timer++;
+                    bomb.radius = Math.max(0, bomb.radius - 4);
+                    
+                    if (bomb.radius <= 0 || bomb.timer > 40) {
+                        activeBombs.splice(i, 1);
+                    }
+                }
+            }
+        }
+        
+        function drawBombs() {
+            activeBombs.forEach(bomb => {
+                if (bomb.phase === 'flying') {
+                    // Draw bomb projectile
+                    ctx.save();
+                    ctx.translate(bomb.x, bomb.y);
+                    
+                    // Bomb body
+                    ctx.fillStyle = '#333';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 8, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Red nose
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -10, 5, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Fins
+                    ctx.fillStyle = '#666';
+                    ctx.fillRect(-10, 8, 6, 8);
+                    ctx.fillRect(4, 8, 6, 8);
+                    
+                    // Trail
+                    ctx.fillStyle = '#ff6600';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 18, 4, 6 + Math.sin(bomb.timer * 0.5) * 3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.restore();
                 } else {
-                    // Destroy regular enemy
-                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width);
-                    score += enemy.score;
+                    // Draw explosion radius
+                    const alpha = bomb.phase === 'fading' ? 
+                        Math.max(0, 1 - bomb.timer / 40) : 
+                        0.8 + Math.sin(bomb.timer * 0.3) * 0.2;
+                    
+                    // Outer glow
+                    const gradient = ctx.createRadialGradient(
+                        bomb.x, bomb.y, 0,
+                        bomb.x, bomb.y, bomb.radius
+                    );
+                    gradient.addColorStop(0, `rgba(255, 255, 200, ${alpha})`);
+                    gradient.addColorStop(0.3, `rgba(255, 100, 0, ${alpha * 0.8})`);
+                    gradient.addColorStop(0.6, `rgba(255, 0, 0, ${alpha * 0.6})`);
+                    gradient.addColorStop(1, `rgba(100, 0, 0, 0)`);
+                    
+                    ctx.beginPath();
+                    ctx.arc(bomb.x, bomb.y, bomb.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    
+                    // Inner core
+                    if (bomb.phase === 'exploding') {
+                        ctx.beginPath();
+                        ctx.arc(bomb.x, bomb.y, bomb.radius * 0.3, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.fill();
+                    }
+                    
+                    // Ring edge
+                    ctx.beginPath();
+                    ctx.arc(bomb.x, bomb.y, bomb.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 200, 50, ${alpha})`;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    
+                    // Add some spark particles around the edge
+                    if (bomb.phase === 'exploding') {
+                        for (let i = 0; i < 8; i++) {
+                            const angle = (i / 8) * Math.PI * 2 + bomb.timer * 0.1;
+                            const sparkX = bomb.x + Math.cos(angle) * bomb.radius * 0.9;
+                            const sparkY = bomb.y + Math.sin(angle) * bomb.radius * 0.9;
+                            
+                            ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+                            ctx.fillRect(sparkX - 2, sparkY - 2, 4, 4);
+                        }
+                    }
                 }
             });
-            enemies = enemies.filter(e => e && e.type === 'boss');
-            
-            enemyBullets = [];
-            
-            // Screen flash
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
         }
         
         function checkCollision(a, b) {
@@ -1576,6 +1722,7 @@
             
             updatePlayer();
             updateBullets();
+            updateBombs();
             updateEnemies();
             updateCollisions();
             updateBackground();
@@ -1604,6 +1751,7 @@
             enemies.forEach(e => e && drawEnemy(e));
             drawPlayer();
             explosions.forEach(e => e && drawExplosion(e));
+            drawBombs();
             drawParticles();
             
             ctx.restore();
@@ -1656,6 +1804,7 @@
             explosions = [];
             powerups = [];
             particles = [];
+            activeBombs = [];
             
             score = 0;
             wave = 0;
@@ -1797,6 +1946,34 @@
         
         document.addEventListener('keyup', (e) => {
             keys[e.code] = false;
+        });
+        
+        // Clear all keys when window loses focus to prevent stuck keys
+        function clearAllKeys() {
+            for (const key in keys) {
+                keys[key] = false;
+            }
+        }
+        
+        window.addEventListener('blur', clearAllKeys);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearAllKeys();
+                // Also pause the game when tab is hidden
+                if (gameState === 'playing') {
+                    gameState = 'paused';
+                }
+            }
+        });
+        
+        // Clear keys when clicking outside the game or on overlays
+        document.addEventListener('mousedown', (e) => {
+            // If clicking on an overlay or outside game area, clear keys
+            if (e.target.id === 'helpOverlay' || 
+                e.target.id === 'startScreen' || 
+                e.target.id === 'gameOverScreen') {
+                clearAllKeys();
+            }
         });
         
         // Prevent scrolling with arrow keys
