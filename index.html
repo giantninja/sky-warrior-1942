@@ -2482,8 +2482,8 @@
             ctx.fillStyle = COLORS.text;
             ctx.fillText(highScore.toString().padStart(8, '0'), WIDTH - 80, 32);
             
-            // Health Bar (below score)
-            const healthBarWidth = 100;
+            // Health Bar (below score) - responsive width for mobile
+            const healthBarWidth = Math.min(100, WIDTH * 0.15);
             const healthBarHeight = 8;
             const healthBarX = 10;
             const healthBarY = 40;
@@ -3357,7 +3357,7 @@
                             break;
                         case 'shield':
                             player.shield = true;
-                            player.shieldTimer = 300;
+                            player.shieldTimer = 450; // 7.5 seconds at 60fps
                             break;
                         case 'bomb':
                             player.bombs = Math.min(player.bombs + 1, 5);
