@@ -123,6 +123,53 @@
             animation: blink 0.8s infinite;
         }
         
+        .difficulty-select {
+            margin-bottom: 25px;
+        }
+        
+        .difficulty-label {
+            font-size: 8px;
+            color: #aaa;
+            margin-bottom: 12px;
+        }
+        
+        .difficulty-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .difficulty-btn {
+            font-size: 8px;
+            padding: 8px 15px;
+            background: #1a1a2e;
+            border: 2px solid #444;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .difficulty-btn:hover {
+            border-color: #666;
+            color: #aaa;
+        }
+        
+        .difficulty-btn.selected {
+            border-color: #4ecdc4;
+            color: #4ecdc4;
+            background: #1a2a3a;
+        }
+        
+        .difficulty-btn[data-difficulty="easy"].selected {
+            border-color: #00cc00;
+            color: #00cc00;
+        }
+        
+        .difficulty-btn[data-difficulty="hard"].selected {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+        
         .game-over-title {
             font-size: 20px;
             color: #ff0000;
@@ -304,10 +351,19 @@
         <div id="startScreen">
             <div class="title">SKY WARRIOR</div>
             <div class="subtitle">- 1942 -</div>
+            
+            <div class="difficulty-select">
+                <div class="difficulty-label">SELECT DIFFICULTY</div>
+                <div class="difficulty-options">
+                    <div class="difficulty-btn" data-difficulty="easy">EASY</div>
+                    <div class="difficulty-btn selected" data-difficulty="normal">NORMAL</div>
+                    <div class="difficulty-btn" data-difficulty="hard">HARD</div>
+                </div>
+            </div>
+            
             <div class="instructions">
                 ARROW KEYS / WASD - MOVE<br>
-                SPACE / Z - SHOOT<br>
-                X - BOMB (LIMITED)<br>
+                SPACE / Z - SHOOT | X - BOMB<br>
                 P - PAUSE | M - MUSIC | ESC - HELP
             </div>
             <div class="start-prompt">PRESS SPACE OR CLICK TO START</div>
@@ -714,6 +770,39 @@
         let waveTimer = 0;
         let difficulty = 1;
         let screenShake = 0;
+        let gameTime = 0; // Time in frames since game started
+        let selectedDifficulty = 'normal'; // 'easy', 'normal', 'hard'
+        
+        // Difficulty multipliers
+        const DIFFICULTY_SETTINGS = {
+            easy: {
+                enemySpeedMult: 0.7,
+                enemySpawnRate: 0.6,
+                enemyBulletSpeed: 0.7,
+                bossHealth: 0.6,
+                warmupTime: 45 * 60, // 45 seconds at 60fps
+                scoreMultiplier: 0.5,
+                label: 'EASY'
+            },
+            normal: {
+                enemySpeedMult: 1.0,
+                enemySpawnRate: 1.0,
+                enemyBulletSpeed: 1.0,
+                bossHealth: 1.0,
+                warmupTime: 30 * 60, // 30 seconds
+                scoreMultiplier: 1.0,
+                label: 'NORMAL'
+            },
+            hard: {
+                enemySpeedMult: 1.3,
+                enemySpawnRate: 1.5,
+                enemyBulletSpeed: 1.3,
+                bossHealth: 1.5,
+                warmupTime: 15 * 60, // 15 seconds
+                scoreMultiplier: 1.5,
+                label: 'HARD'
+            }
+        };
         
         // Color Palette (NES-style)
         const COLORS = {
@@ -2212,6 +2301,33 @@
             ctx.font = '6px Press Start 2P';
             ctx.fillStyle = musicEnabled ? '#4ecdc4' : '#666';
             ctx.fillText(musicEnabled ? '♪ ON' : '♪ OFF', WIDTH - 10, 45);
+            
+            // Difficulty indicator
+            const settings = DIFFICULTY_SETTINGS[selectedDifficulty];
+            const diffColors = { easy: '#00cc00', normal: '#4ecdc4', hard: '#ff4444' };
+            ctx.fillStyle = diffColors[selectedDifficulty];
+            ctx.fillText(settings.label, WIDTH - 10, 55);
+            
+            // Warmup indicator (shows during warmup period)
+            const warmupProgress = Math.min(1, gameTime / settings.warmupTime);
+            if (warmupProgress < 1) {
+                const secondsLeft = Math.ceil((settings.warmupTime - gameTime) / 60);
+                ctx.textAlign = 'center';
+                ctx.font = '8px Press Start 2P';
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText('GET READY!', WIDTH / 2, 60);
+                ctx.font = '6px Press Start 2P';
+                ctx.fillStyle = '#aaa';
+                ctx.fillText(secondsLeft + 's', WIDTH / 2, 72);
+                
+                // Warmup progress bar
+                const barWidth = 80;
+                const barX = WIDTH / 2 - barWidth / 2;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(barX, 76, barWidth, 4);
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(barX, 76, barWidth * warmupProgress, 4);
+            }
         }
         
         function drawParticles() {
@@ -2229,16 +2345,33 @@
         
         function spawnEnemy(type = 'basic', x = null) {
             const enemyType = ENEMY_TYPES[type];
+            const settings = DIFFICULTY_SETTINGS[selectedDifficulty];
+            const warmupProgress = Math.min(1, gameTime / settings.warmupTime);
+            const warmupSpeedMult = 0.5 + warmupProgress * 0.5; // 50% speed during warmup start
+            
             x = x !== null ? x : Math.random() * (WIDTH - enemyType.width);
+            
+            // Calculate HP with difficulty - bosses scale differently
+            let hp = enemyType.hp + Math.floor(difficulty / 3);
+            if (type === 'boss') {
+                hp = Math.floor(ENEMY_TYPES.boss.hp * settings.bossHealth);
+            }
+            
+            // Calculate speed with difficulty and warmup
+            const baseSpeed = enemyType.speed + difficulty * 0.1;
+            const adjustedSpeed = baseSpeed * settings.enemySpeedMult * warmupSpeedMult;
+            
+            // Calculate score with difficulty multiplier
+            const adjustedScore = Math.floor(enemyType.score * settings.scoreMultiplier);
             
             enemies.push({
                 x: x,
                 y: -enemyType.height,
                 width: enemyType.width,
                 height: enemyType.height,
-                hp: enemyType.hp + Math.floor(difficulty / 3),
-                speed: enemyType.speed + difficulty * 0.1,
-                score: enemyType.score,
+                hp: hp,
+                speed: adjustedSpeed,
+                score: adjustedScore,
                 color: enemyType.color,
                 pattern: enemyType.pattern,
                 type: type,
@@ -2998,25 +3131,47 @@
         
         function updateDifficulty() {
             waveTimer++;
+            gameTime++;
+            
+            const settings = DIFFICULTY_SETTINGS[selectedDifficulty];
+            const warmupTime = settings.warmupTime;
+            const spawnRateMult = settings.enemySpawnRate;
+            
+            // Calculate warmup factor (0 to 1, increases over warmup period)
+            const warmupProgress = Math.min(1, gameTime / warmupTime);
+            const warmupFactor = 0.3 + warmupProgress * 0.7; // Start at 30%, ramp to 100%
             
             // Spawn new wave
-            if (enemies.length === 0 && waveTimer > 120) {
+            const waveDelay = Math.floor(150 / warmupFactor); // Longer delays during warmup
+            if (enemies.length === 0 && waveTimer > waveDelay) {
                 wave++;
-                difficulty = 1 + wave * 0.1;
+                difficulty = (1 + wave * 0.1) * settings.enemySpeedMult;
                 spawnWave();
             }
             
-            // Random enemy spawns
-            if (waveTimer % Math.max(60, 180 - wave * 10) === 0 && enemies.length < 10) {
-                const types = ['basic'];
-                if (wave > 2) types.push('zigzag');
-                if (wave > 4) types.push('diver');
-                if (wave > 6) types.push('shooter');
+            // Random enemy spawns - much slower during warmup
+            const baseSpawnRate = Math.max(60, 180 - wave * 10);
+            const actualSpawnRate = Math.floor(baseSpawnRate / (warmupFactor * spawnRateMult));
+            const maxEnemies = Math.floor(4 + warmupProgress * 6); // Start with max 4, ramp to 10
+            
+            if (waveTimer % actualSpawnRate === 0 && enemies.length < maxEnemies) {
+                // During warmup, mostly spawn basic enemies
+                let types = ['basic'];
+                if (warmupProgress > 0.3 && wave > 2) types.push('zigzag');
+                if (warmupProgress > 0.5 && wave > 3) types.push('zigzag');
+                if (warmupProgress > 0.7 && wave > 4) types.push('diver');
+                if (warmupProgress >= 1.0 && wave > 5) types.push('shooter');
+                
                 spawnEnemy(types[Math.floor(Math.random() * types.length)]);
             }
             
             // Screen shake decay
             if (screenShake > 0) screenShake *= 0.9;
+        }
+        
+        // Helper function to get current difficulty settings
+        function getDifficultySettings() {
+            return DIFFICULTY_SETTINGS[selectedDifficulty];
         }
         
         // ============================================
@@ -3118,6 +3273,7 @@
             waveTimer = 60;
             difficulty = 1;
             screenShake = 0;
+            gameTime = 0;
             
             initTerrain();
             initBackground();
@@ -3132,8 +3288,20 @@
             startMusic();
         }
         
+        // Difficulty button handling
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Don't trigger game start
+                document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedDifficulty = btn.dataset.difficulty;
+            });
+        });
+        
         // Click to start on start/gameover screens
-        document.getElementById('startScreen').addEventListener('click', () => {
+        document.getElementById('startScreen').addEventListener('click', (e) => {
+            // Don't start if clicking difficulty buttons
+            if (e.target.classList.contains('difficulty-btn')) return;
             if (gameState === 'start') {
                 startGame();
             }
