@@ -308,7 +308,7 @@
                 ARROW KEYS / WASD - MOVE<br>
                 SPACE / Z - SHOOT<br>
                 X - BOMB (LIMITED)<br>
-                P - PAUSE | ESC - HELP
+                P - PAUSE | M - MUSIC | ESC - HELP
             </div>
             <div class="start-prompt">PRESS SPACE OR CLICK TO START</div>
         </div>
@@ -361,6 +361,10 @@
                     <span class="help-key">F</span>
                     <span class="help-desc">Toggle fullscreen</span>
                 </div>
+                <div class="help-row">
+                    <span class="help-key">M</span>
+                    <span class="help-desc">Toggle music</span>
+                </div>
             </div>
             
             <div class="help-section">
@@ -385,6 +389,10 @@
                     <div class="help-powerup">
                         <div class="powerup-icon" style="border-color: #ffff00; color: #ffff00;">></div>
                         <span class="powerup-label">SPEED</span>
+                    </div>
+                    <div class="help-powerup">
+                        <div class="powerup-icon" style="border-color: #ff66cc; color: #ff66cc;">H</div>
+                        <span class="powerup-label">REPAIR</span>
                     </div>
                 </div>
             </div>
@@ -421,6 +429,190 @@
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // ============================================
+        // Chiptune Music System
+        // ============================================
+        
+        let musicPlaying = false;
+        let musicEnabled = true;
+        let musicGain = null;
+        let musicInterval = null;
+        let currentBeat = 0;
+        
+        // Note frequencies (A4 = 440Hz based) - includes sharps/flats for minor keys
+        const NOTES = {
+            // Octave 2 (deep bass)
+            'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
+            'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31,
+            'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83,
+            // Octave 3
+            'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 
+            'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+            // Octave 4
+            'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23,
+            'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+            // Octave 5
+            'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46,
+            'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+            // Octave 6
+            'C6': 1046.50,
+            'REST': 0
+        };
+        
+        // Intense, urgent melody in A minor - danger theme
+        const melody = [
+            'A5', 'REST', 'A5', 'A5', 'G5', 'REST', 'A5', 'REST',
+            'E5', 'REST', 'E5', 'F5', 'E5', 'D5', 'E5', 'REST',
+            'A5', 'REST', 'A5', 'A5', 'B5', 'REST', 'C6', 'REST',
+            'B5', 'A5', 'G5', 'A5', 'REST', 'REST', 'E5', 'REST',
+            'A5', 'G5', 'A5', 'REST', 'C6', 'B5', 'A5', 'G5',
+            'F5', 'E5', 'F5', 'REST', 'E5', 'REST', 'D5', 'E5',
+            'A5', 'REST', 'G5', 'F5', 'E5', 'REST', 'D5', 'E5',
+            'A4', 'REST', 'REST', 'A5', 'G5', 'F5', 'E5', 'REST'
+        ];
+        
+        // Aggressive driving bass - pounding rhythm
+        const bassLine = [
+            'A2', 'A2', 'A3', 'A2', 'A2', 'A3', 'A2', 'A3',
+            'E2', 'E2', 'E3', 'E2', 'E2', 'E3', 'E2', 'E3',
+            'A2', 'A2', 'A3', 'A2', 'A2', 'A3', 'A2', 'A3',
+            'G2', 'G2', 'G3', 'G2', 'F2', 'F2', 'E2', 'E2',
+            'A2', 'A2', 'A3', 'A2', 'A2', 'A3', 'A2', 'A3',
+            'D2', 'D2', 'D3', 'D2', 'D2', 'D3', 'E2', 'E3',
+            'F2', 'F2', 'F3', 'F2', 'E2', 'E2', 'E3', 'E2',
+            'A2', 'A3', 'A2', 'A3', 'A2', 'A3', 'A2', 'A3'
+        ];
+        
+        // Fast arpeggio pattern - adds tension
+        const arpeggio = [
+            'A3', 'C4', 'E4', 'A4', 'E4', 'C4', 'A3', 'E4',
+            'E3', 'G3', 'B3', 'E4', 'B3', 'G3', 'E3', 'B3',
+            'A3', 'C4', 'E4', 'A4', 'C5', 'A4', 'E4', 'C4',
+            'G3', 'B3', 'D4', 'G4', 'F3', 'A3', 'C4', 'E4',
+            'A3', 'C4', 'E4', 'A4', 'E4', 'C4', 'A3', 'E4',
+            'D3', 'F3', 'A3', 'D4', 'E3', 'G#3', 'B3', 'E4',
+            'F3', 'A3', 'C4', 'F4', 'E3', 'G#3', 'B3', 'E4',
+            'A3', 'E4', 'A4', 'E4', 'A3', 'E4', 'A4', 'E4'
+        ];
+        
+        function playNote(freq, duration, type = 'square', volume = 0.08, startTime = 0) {
+            if (!audioCtx || freq === 0) return;
+            
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
+                
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime + startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+                
+                osc.connect(gain);
+                if (musicGain) {
+                    gain.connect(musicGain);
+                } else {
+                    gain.connect(audioCtx.destination);
+                }
+                
+                osc.start(audioCtx.currentTime + startTime);
+                osc.stop(audioCtx.currentTime + startTime + duration);
+                
+                osc.onended = () => {
+                    osc.disconnect();
+                    gain.disconnect();
+                };
+            } catch (e) {
+                // Silently fail
+            }
+        }
+        
+        function playMusicBeat() {
+            if (!musicEnabled || !audioCtx || gameState !== 'playing') return;
+            
+            const beatDuration = 0.08; // Faster, more urgent
+            
+            // Get current notes
+            const melodyNote = melody[currentBeat % melody.length];
+            const bassNote = bassLine[currentBeat % bassLine.length];
+            const arpNote = arpeggio[currentBeat % arpeggio.length];
+            
+            // Play melody (lead) - aggressive square wave
+            if (melodyNote !== 'REST' && NOTES[melodyNote]) {
+                playNote(NOTES[melodyNote], beatDuration * 0.85, 'square', 0.07);
+            }
+            
+            // Play bass - heavy and driving
+            if (NOTES[bassNote]) {
+                playNote(NOTES[bassNote], beatDuration * 0.7, 'sawtooth', 0.12);
+            }
+            
+            // Play arpeggio - constant motion, adds urgency
+            if (NOTES[arpNote]) {
+                playNote(NOTES[arpNote], beatDuration * 0.4, 'triangle', 0.04);
+            }
+            
+            // Aggressive drum pattern
+            if (currentBeat % 4 === 0) {
+                // Kick drum - punchy
+                playNote(55, 0.08, 'sine', 0.18);
+                playNote(110, 0.04, 'triangle', 0.1);
+            }
+            if (currentBeat % 4 === 2) {
+                // Snare hit
+                playNote(180, 0.06, 'sawtooth', 0.1);
+                playNote(400, 0.03, 'square', 0.05);
+            }
+            // Hi-hat on every beat for urgency
+            if (currentBeat % 2 === 0) {
+                playNote(800, 0.02, 'square', 0.03);
+            }
+            // Extra hits for intensity
+            if (currentBeat % 8 === 6) {
+                playNote(150, 0.04, 'sawtooth', 0.08);
+            }
+            
+            currentBeat++;
+        }
+        
+        function startMusic() {
+            if (musicPlaying || !musicEnabled) return;
+            
+            if (!audioCtx) initAudio();
+            
+            // Create master gain for music
+            musicGain = audioCtx.createGain();
+            musicGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            musicGain.connect(audioCtx.destination);
+            
+            currentBeat = 0;
+            musicPlaying = true;
+            
+            // Play beats at ~180 BPM - fast and intense!
+            musicInterval = setInterval(playMusicBeat, 83);
+        }
+        
+        function stopMusic() {
+            if (musicInterval) {
+                clearInterval(musicInterval);
+                musicInterval = null;
+            }
+            musicPlaying = false;
+            if (musicGain) {
+                musicGain.disconnect();
+                musicGain = null;
+            }
+        }
+        
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            if (musicEnabled && gameState === 'playing') {
+                startMusic();
+            } else {
+                stopMusic();
             }
         }
         
@@ -554,6 +746,8 @@
             speed: 4,
             lives: 3,
             bombs: 3,
+            health: 100,
+            maxHealth: 100,
             fireRate: 150,
             lastShot: 0,
             powerLevel: 1,
@@ -655,7 +849,7 @@
         };
         
         // Power-up Types
-        const POWERUP_TYPES = ['weapon', 'shield', 'bomb', 'life', 'speed'];
+        const POWERUP_TYPES = ['weapon', 'shield', 'bomb', 'life', 'speed', 'health'];
         
         // ============================================
         // Drawing Functions
@@ -914,6 +1108,46 @@
             ctx.fillStyle = COLORS.text;
             ctx.fillText(highScore.toString().padStart(8, '0'), WIDTH - 80, 32);
             
+            // Health Bar (below score)
+            const healthBarWidth = 100;
+            const healthBarHeight = 8;
+            const healthBarX = 10;
+            const healthBarY = 40;
+            const healthPercent = player.health / player.maxHealth;
+            
+            // Health bar background
+            ctx.fillStyle = '#333';
+            ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+            
+            // Health bar fill - color changes based on health level
+            let healthColor;
+            if (healthPercent > 0.6) {
+                healthColor = '#00ff00'; // Green
+            } else if (healthPercent > 0.3) {
+                healthColor = '#ffff00'; // Yellow
+            } else {
+                healthColor = '#ff0000'; // Red
+            }
+            
+            // Pulsing effect when low health
+            if (healthPercent <= 0.3 && Math.floor(Date.now() / 200) % 2 === 0) {
+                healthColor = '#ff6666';
+            }
+            
+            ctx.fillStyle = healthColor;
+            ctx.fillRect(healthBarX + 1, healthBarY + 1, (healthBarWidth - 2) * healthPercent, healthBarHeight - 2);
+            
+            // Health bar border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+            
+            // Health text
+            ctx.fillStyle = COLORS.text;
+            ctx.font = '6px Press Start 2P';
+            ctx.fillText('HP', healthBarX + healthBarWidth + 5, healthBarY + 7);
+            ctx.font = '8px Press Start 2P';
+            
             // Lives
             ctx.fillStyle = COLORS.hud;
             ctx.fillText('LIVES', 10, HEIGHT - 25);
@@ -942,6 +1176,12 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('POW:' + player.powerLevel, WIDTH / 2, HEIGHT - 10);
             }
+            
+            // Music indicator (top right, below high score)
+            ctx.textAlign = 'right';
+            ctx.font = '6px Press Start 2P';
+            ctx.fillStyle = musicEnabled ? '#4ecdc4' : '#666';
+            ctx.fillText(musicEnabled ? '♪ ON' : '♪ OFF', WIDTH - 10, 45);
         }
         
         function drawParticles() {
@@ -1071,6 +1311,10 @@
                 case 'speed':
                     color = '#ffff00';
                     icon = '>';
+                    break;
+                case 'health':
+                    color = '#ff66cc';
+                    icon = 'H';
                     break;
             }
             
@@ -1558,7 +1802,7 @@
                         { x: player.x + 4, y: player.y + 4, width: player.width - 8, height: player.height - 8 }
                     )) {
                         enemyBullets[i] = null;
-                        playerHit();
+                        playerHit(20); // Bullet damage
                         break; // Player is hit once, stop checking
                     }
                 }
@@ -1575,7 +1819,7 @@
                         { x: player.x + 4, y: player.y + 4, width: player.width - 8, height: player.height - 8 },
                         enemy
                     )) {
-                        playerHit();
+                        playerHit(35); // Collision damage is higher
                         break; // Player is hit once, stop checking
                     }
                 }
@@ -1610,6 +1854,9 @@
                         case 'speed':
                             player.speed = Math.min(player.speed + 0.5, 6);
                             break;
+                        case 'health':
+                            player.health = Math.min(player.health + 40, player.maxHealth);
+                            break;
                     }
                     
                     powerups[i] = null;
@@ -1618,21 +1865,50 @@
             powerups = powerups.filter(p => p !== null);
         }
         
-        function playerHit() {
-            player.lives--;
+        function playerHit(damage = 25) {
+            // Reduce health
+            player.health -= damage;
+            
+            // Brief invincibility after any hit
             player.invincible = true;
-            player.invincibleTimer = 120;
-            player.powerLevel = Math.max(1, player.powerLevel - 1);
+            player.invincibleTimer = 30;
             
-            createExplosion(player.x + player.width/2, player.y + player.height/2, 30);
+            // Small hit effect
+            screenShake = 3;
+            playSound('hit');
             
-            if (player.lives <= 0) {
-                gameOver();
+            // Add damage particles
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    x: player.x + player.width/2,
+                    y: player.y + player.height/2,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    size: Math.random() * 3 + 1,
+                    color: '#ff4444',
+                    life: 0.8
+                });
+            }
+            
+            // Check if health depleted - lose a life
+            if (player.health <= 0) {
+                player.lives--;
+                player.health = player.maxHealth; // Reset health
+                player.invincible = true;
+                player.invincibleTimer = 120; // Longer invincibility on life loss
+                player.powerLevel = Math.max(1, player.powerLevel - 1);
+                
+                createExplosion(player.x + player.width/2, player.y + player.height/2, 30);
+                
+                if (player.lives <= 0) {
+                    gameOver();
+                }
             }
         }
         
         function gameOver() {
             gameState = 'gameover';
+            stopMusic();
             
             if (score > highScore) {
                 highScore = score;
@@ -1790,6 +2066,7 @@
             player.y = HEIGHT - 60;
             player.lives = 3;
             player.bombs = 3;
+            player.health = player.maxHealth;
             player.powerLevel = 1;
             player.fireRate = 150;
             player.speed = 4;
@@ -1821,6 +2098,7 @@
             gameState = 'playing';
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
+            startMusic();
         }
         
         // Click to start on start/gameover screens
@@ -1935,7 +2213,18 @@
             }
             
             if (e.code === 'KeyP' && (gameState === 'playing' || gameState === 'paused')) {
-                gameState = gameState === 'playing' ? 'paused' : 'playing';
+                if (gameState === 'playing') {
+                    gameState = 'paused';
+                    stopMusic();
+                } else {
+                    gameState = 'playing';
+                    startMusic();
+                }
+            }
+            
+            // M - Toggle music
+            if (e.code === 'KeyM') {
+                toggleMusic();
             }
             
             // F - Toggle fullscreen
