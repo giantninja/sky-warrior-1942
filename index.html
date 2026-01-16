@@ -1399,22 +1399,48 @@
             if (player.invincible && Math.floor(Date.now() / 100) % 2 === 0) return;
             
             const shake = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+            const centerX = player.x + player.width / 2 + shake;
+            const centerY = player.y + player.height / 2;
+            
+            // Drop shadow for depth (makes ship pop from background)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 3, centerY + 6, player.width * 0.7, player.height * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Glowing aura around player (cyan/teal glow)
+            const glowPulse = 0.4 + Math.sin(Date.now() / 200) * 0.15;
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, player.width * 1.4);
+            gradient.addColorStop(0, `rgba(78, 205, 196, ${glowPulse * 0.4})`);
+            gradient.addColorStop(0.5, `rgba(78, 205, 196, ${glowPulse * 0.2})`);
+            gradient.addColorStop(1, 'rgba(78, 205, 196, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, player.width * 1.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Subtle white outline glow
+            ctx.save();
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
             
             // Shield effect
             if (player.shield) {
                 const shieldPulse = 0.5 + Math.sin(Date.now() / 100) * 0.3;
                 ctx.beginPath();
-                ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width + 4, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, player.width + 4, 0, Math.PI * 2);
                 ctx.strokeStyle = `rgba(0, 255, 255, ${shieldPulse})`;
                 ctx.lineWidth = 3;
                 ctx.stroke();
                 
                 // Inner shield glow
                 ctx.beginPath();
-                ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, player.width, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(0, 255, 255, ${shieldPulse * 0.2})`;
                 ctx.fill();
             }
+            
+            ctx.restore();
             
             // Draw enhanced player ship
             drawPlayerShip(
