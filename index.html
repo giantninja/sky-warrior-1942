@@ -363,7 +363,7 @@
             
             <div class="instructions">
                 ARROW KEYS / WASD - MOVE<br>
-                SPACE / Z - SHOOT | X - BOMB<br>
+                SPACE / SHIFT - SHOOT | Z - BOMB<br>
                 P - PAUSE | M - MUSIC | ESC - HELP
             </div>
             <div class="start-prompt">PRESS SPACE OR CLICK TO START</div>
@@ -394,11 +394,11 @@
             <div class="help-section">
                 <div class="help-section-title">COMBAT</div>
                 <div class="help-row">
-                    <span class="help-key">SPACE / Z</span>
+                    <span class="help-key">SPACE / SHIFT</span>
                     <span class="help-desc">Fire weapons</span>
                 </div>
                 <div class="help-row">
-                    <span class="help-key">X</span>
+                    <span class="help-key">Z</span>
                     <span class="help-desc">Use bomb (clears screen)</span>
                 </div>
             </div>
@@ -2784,7 +2784,7 @@
             player.y = Math.max(50, Math.min(HEIGHT - player.height - 20, player.y));
             
             // Shooting
-            if (keys['Space'] || keys['KeyZ']) {
+            if (keys['Space'] || keys['ShiftLeft'] || keys['ShiftRight']) {
                 shoot();
             }
             
@@ -3407,7 +3407,7 @@
             // Don't process other keys if help is visible
             if (helpVisible) return;
             
-            if (e.code === 'KeyX' && gameState === 'playing') {
+            if (e.code === 'KeyZ' && gameState === 'playing') {
                 useBomb();
             }
             
