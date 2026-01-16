@@ -979,7 +979,7 @@
             ctx.restore();
         }
         
-        // Enhanced enemy ship drawing
+        // Enhanced enemy aircraft drawing - WWII style planes
         function drawEnemyShip(x, y, width, height, color, type) {
             const w = width;
             const h = height;
@@ -988,93 +988,257 @@
             ctx.save();
             ctx.translate(x, y);
             
-            // Different designs based on type
             if (type === 'basic') {
-                // Simple fighter
-                ctx.fillStyle = color;
+                // Japanese Zero-style fighter
+                
+                // Propeller blur
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.4)';
                 ctx.beginPath();
-                ctx.moveTo(w/2, h); // Nose pointing down
-                ctx.lineTo(w - 2, 4);
-                ctx.lineTo(w - 2, 0);
-                ctx.lineTo(2, 0);
-                ctx.lineTo(2, 4);
-                ctx.closePath();
+                ctx.ellipse(w/2, h + 2, 6, 3, 0, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Cockpit
-                ctx.fillStyle = '#ffcc00';
+                // Main fuselage
+                ctx.fillStyle = '#4a5a4a'; // Military green-grey
                 ctx.beginPath();
-                ctx.ellipse(w/2, 6, 3, 3, 0, 0, Math.PI * 2);
+                ctx.moveTo(w/2, h + 4); // Nose
+                ctx.lineTo(w/2 + 4, h - 2);
+                ctx.lineTo(w/2 + 3, 6);
+                ctx.lineTo(w/2 + 2, 0);
+                ctx.lineTo(w/2 - 2, 0);
+                ctx.lineTo(w/2 - 3, 6);
+                ctx.lineTo(w/2 - 4, h - 2);
+                ctx.closePath();
                 ctx.fill();
                 
                 // Wings
-                ctx.fillStyle = '#8b0000';
-                ctx.fillRect(0, 2, w, 4);
-                
-            } else if (type === 'zigzag') {
-                // Twin-boom fighter
-                ctx.fillStyle = color;
-                ctx.fillRect(2, 0, 5, h - 2);
-                ctx.fillRect(w - 7, 0, 5, h - 2);
-                ctx.fillRect(4, h/2 - 2, w - 8, 4);
-                
-                // Center pod
-                ctx.fillStyle = '#ffa000';
+                ctx.fillStyle = '#5a6a5a';
                 ctx.beginPath();
-                ctx.ellipse(w/2, h/2, 4, 6, 0, 0, Math.PI * 2);
+                ctx.moveTo(0, h/2 + 2);
+                ctx.lineTo(2, h/2 - 2);
+                ctx.lineTo(w/2 - 3, h/2 - 1);
+                ctx.lineTo(w/2 - 3, h/2 + 3);
+                ctx.closePath();
                 ctx.fill();
-                
-                // Engine glow
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(3, 0, 3, 3);
-                ctx.fillRect(w - 6, 0, 3, 3);
-                
-            } else if (type === 'diver') {
-                // Sleek dive bomber
-                ctx.fillStyle = color;
                 ctx.beginPath();
-                ctx.moveTo(w/2, h);
-                ctx.lineTo(w/2 + 6, h - 8);
-                ctx.lineTo(w - 2, 0);
-                ctx.lineTo(2, 0);
-                ctx.lineTo(w/2 - 6, h - 8);
+                ctx.moveTo(w, h/2 + 2);
+                ctx.lineTo(w - 2, h/2 - 2);
+                ctx.lineTo(w/2 + 3, h/2 - 1);
+                ctx.lineTo(w/2 + 3, h/2 + 3);
                 ctx.closePath();
                 ctx.fill();
                 
-                // Stripes
-                ctx.fillStyle = '#4a0080';
-                ctx.fillRect(4, 4, w - 8, 3);
-                ctx.fillRect(6, 10, w - 12, 2);
+                // Rising sun on wings
+                ctx.fillStyle = '#cc0000';
+                ctx.beginPath();
+                ctx.arc(4, h/2, 3, 0, Math.PI * 2);
+                ctx.arc(w - 4, h/2, 3, 0, Math.PI * 2);
+                ctx.fill();
                 
-                // Canopy
-                ctx.fillStyle = '#ffff00';
+                // Cockpit
+                ctx.fillStyle = '#3a4a5a';
+                ctx.beginPath();
+                ctx.ellipse(w/2, 8, 3, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#8090a0';
+                ctx.beginPath();
+                ctx.ellipse(w/2, 7, 2, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Tail
+                ctx.fillStyle = '#4a5a4a';
+                ctx.fillRect(w/2 - 5, 0, 10, 4);
+                
+            } else if (type === 'zigzag') {
+                // Twin-engine bomber
+                
+                // Propeller blurs
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.4)';
+                ctx.beginPath();
+                ctx.ellipse(4, h + 1, 4, 2, 0, 0, Math.PI * 2);
+                ctx.ellipse(w - 4, h + 1, 4, 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Engine nacelles
+                ctx.fillStyle = '#6a5040';
+                ctx.fillRect(1, h/2 - 2, 7, h/2 + 4);
+                ctx.fillRect(w - 8, h/2 - 2, 7, h/2 + 4);
+                
+                // Main fuselage
+                ctx.fillStyle = '#806850';
+                ctx.beginPath();
+                ctx.moveTo(w/2, h);
+                ctx.lineTo(w/2 + 4, h - 4);
+                ctx.lineTo(w/2 + 3, 2);
+                ctx.lineTo(w/2 - 3, 2);
+                ctx.lineTo(w/2 - 4, h - 4);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Wings connecting engines
+                ctx.fillStyle = '#907060';
+                ctx.fillRect(4, h/2 - 1, w - 8, 5);
+                
+                // Tail section
+                ctx.fillStyle = '#806850';
+                ctx.beginPath();
+                ctx.moveTo(w/2 - 6, 0);
+                ctx.lineTo(w/2 - 3, 4);
+                ctx.lineTo(w/2 + 3, 4);
+                ctx.lineTo(w/2 + 6, 0);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Cockpit glass
+                ctx.fillStyle = '#90a0b0';
                 ctx.beginPath();
                 ctx.ellipse(w/2, h - 6, 3, 4, 0, 0, Math.PI * 2);
                 ctx.fill();
                 
-            } else if (type === 'shooter') {
-                // Heavy gunship
-                ctx.fillStyle = color;
-                ctx.fillRect(4, 0, w - 8, h);
+                // Military markings
+                ctx.fillStyle = '#cc0000';
+                ctx.fillRect(w/2 - 1, 0, 2, h);
                 
-                // Gun pods
-                ctx.fillStyle = '#660033';
-                ctx.fillRect(0, 4, 6, h - 8);
-                ctx.fillRect(w - 6, 4, 6, h - 8);
+            } else if (type === 'diver') {
+                // Dive bomber (Val-style)
                 
-                // Turret
+                // Propeller blur
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+                ctx.beginPath();
+                ctx.ellipse(w/2, h + 3, 7, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Main body - angular dive bomber shape
+                ctx.fillStyle = '#5a4a60';
+                ctx.beginPath();
+                ctx.moveTo(w/2, h + 5);
+                ctx.lineTo(w/2 + 5, h - 3);
+                ctx.lineTo(w/2 + 4, 4);
+                ctx.lineTo(w/2, 0);
+                ctx.lineTo(w/2 - 4, 4);
+                ctx.lineTo(w/2 - 5, h - 3);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Fixed landing gear (dive bombers had these)
+                ctx.fillStyle = '#333';
+                ctx.fillRect(w/2 - 7, h - 6, 3, 8);
+                ctx.fillRect(w/2 + 4, h - 6, 3, 8);
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(w/2 - 5.5, h + 2, 2, 0, Math.PI * 2);
+                ctx.arc(w/2 + 5.5, h + 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Gull wings
+                ctx.fillStyle = '#6a5a70';
+                ctx.beginPath();
+                ctx.moveTo(0, h/2 + 4);
+                ctx.lineTo(3, h/2);
+                ctx.lineTo(w/2 - 4, h/2 - 2);
+                ctx.lineTo(w/2 - 4, h/2 + 2);
+                ctx.lineTo(3, h/2 + 3);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(w, h/2 + 4);
+                ctx.lineTo(w - 3, h/2);
+                ctx.lineTo(w/2 + 4, h/2 - 2);
+                ctx.lineTo(w/2 + 4, h/2 + 2);
+                ctx.lineTo(w - 3, h/2 + 3);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Cockpit
+                ctx.fillStyle = '#4a5a6a';
+                ctx.beginPath();
+                ctx.ellipse(w/2, 8, 3, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#7a8a9a';
+                ctx.beginPath();
+                ctx.ellipse(w/2, 7, 2, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Bomb underneath
                 ctx.fillStyle = '#333';
                 ctx.beginPath();
-                ctx.arc(w/2, h - 4, 5, 0, Math.PI * 2);
+                ctx.ellipse(w/2, h/2 + 6, 2, 5, 0, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = '#ff0';
+                ctx.fillStyle = '#cc0000';
                 ctx.beginPath();
-                ctx.arc(w/2, h - 4, 2, 0, Math.PI * 2);
+                ctx.ellipse(w/2, h/2 + 10, 1.5, 2, 0, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Bridge
-                ctx.fillStyle = '#ff6699';
-                ctx.fillRect(w/2 - 4, 2, 8, 6);
+            } else if (type === 'shooter') {
+                // Heavy attack plane / gunship
+                
+                // Propeller blurs
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.4)';
+                ctx.beginPath();
+                ctx.ellipse(5, h + 2, 5, 2.5, 0, 0, Math.PI * 2);
+                ctx.ellipse(w - 5, h + 2, 5, 2.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Twin engine nacelles
+                ctx.fillStyle = '#4a4a5a';
+                ctx.fillRect(1, h/2, 9, h/2 + 3);
+                ctx.fillRect(w - 10, h/2, 9, h/2 + 3);
+                
+                // Engine cowlings
+                ctx.fillStyle = '#3a3a4a';
+                ctx.beginPath();
+                ctx.arc(5, h + 1, 4, 0, Math.PI * 2);
+                ctx.arc(w - 5, h + 1, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Main fuselage
+                ctx.fillStyle = '#5a5a6a';
+                ctx.beginPath();
+                ctx.moveTo(w/2 - 5, h);
+                ctx.lineTo(w/2 + 5, h);
+                ctx.lineTo(w/2 + 4, 4);
+                ctx.lineTo(w/2, 0);
+                ctx.lineTo(w/2 - 4, 4);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Wide wings
+                ctx.fillStyle = '#6a6a7a';
+                ctx.fillRect(0, h/2 - 2, w, 6);
+                
+                // Tail fins
+                ctx.fillStyle = '#5a5a6a';
+                ctx.beginPath();
+                ctx.moveTo(w/2 - 8, 0);
+                ctx.lineTo(w/2 - 5, 6);
+                ctx.lineTo(w/2 + 5, 6);
+                ctx.lineTo(w/2 + 8, 0);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Gun turrets
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.arc(w/2, h - 3, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#222';
+                ctx.fillRect(w/2 - 1, h - 1, 2, 6);
+                
+                // Dorsal turret
+                ctx.fillStyle = '#444';
+                ctx.beginPath();
+                ctx.arc(w/2, 10, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Cockpit windows
+                ctx.fillStyle = '#8090a0';
+                ctx.fillRect(w/2 - 3, 4, 6, 4);
+                
+                // Wing markings
+                ctx.fillStyle = '#cc0000';
+                ctx.beginPath();
+                ctx.arc(w/4, h/2 + 1, 3, 0, Math.PI * 2);
+                ctx.arc(w * 3/4, h/2 + 1, 3, 0, Math.PI * 2);
+                ctx.fill();
             }
             
             ctx.restore();
@@ -1143,139 +1307,233 @@
             
             ctx.save();
             
-            // Menacing glow effect
-            const glowSize = 8 + Math.sin(time / 200) * 4;
-            const glowGradient = ctx.createRadialGradient(
-                x + w/2, y + h/2, 0,
-                x + w/2, y + h/2, w/2 + glowSize
-            );
-            glowGradient.addColorStop(0, 'rgba(255, 0, 0, 0)');
-            glowGradient.addColorStop(0.7, 'rgba(255, 0, 0, 0.1)');
-            glowGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
-            ctx.fillStyle = glowGradient;
-            ctx.fillRect(x - 20, y - 20, w + 40, h + 40);
+            // ========== MASSIVE WWII HEAVY BOMBER ==========
             
-            // Engine flames (4 engines)
-            for (let i = 0; i < 4; i++) {
-                const engineX = x + 8 + i * 14;
-                const flameH = 8 + Math.sin(time / 40 + i) * 4;
-                const flameGrad = ctx.createLinearGradient(engineX, y, engineX, y - flameH);
-                flameGrad.addColorStop(0, '#ffffff');
-                flameGrad.addColorStop(0.4, '#ff0000');
-                flameGrad.addColorStop(1, 'rgba(255, 0, 0, 0)');
-                ctx.fillStyle = flameGrad;
+            // Four propeller blurs
+            const propPositions = [
+                {x: x + 8, y: y + h + 3},
+                {x: x + 22, y: y + h + 3},
+                {x: x + w - 22, y: y + h + 3},
+                {x: x + w - 8, y: y + h + 3}
+            ];
+            
+            propPositions.forEach((prop, i) => {
+                // Propeller disc blur
+                ctx.fillStyle = 'rgba(80, 80, 80, 0.5)';
                 ctx.beginPath();
-                ctx.moveTo(engineX - 2, y);
-                ctx.lineTo(engineX + 1, y - flameH);
-                ctx.lineTo(engineX + 4, y);
+                ctx.ellipse(prop.x, prop.y, 7, 4, 0, 0, Math.PI * 2);
                 ctx.fill();
-            }
+                
+                // Spinning prop hint
+                const propAngle = (time / 30 + i * 45) % 360;
+                ctx.strokeStyle = 'rgba(40, 40, 40, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(prop.x - 6, prop.y);
+                ctx.lineTo(prop.x + 6, prop.y);
+                ctx.stroke();
+            });
             
-            // Main hull - dark armored body
-            ctx.fillStyle = '#1a1a2e';
+            // Engine nacelles
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(x + 4, y + h/2 + 5, 10, h/2 - 3);
+            ctx.fillRect(x + 18, y + h/2 + 5, 10, h/2 - 3);
+            ctx.fillRect(x + w - 28, y + h/2 + 5, 10, h/2 - 3);
+            ctx.fillRect(x + w - 14, y + h/2 + 5, 10, h/2 - 3);
+            
+            // Engine cowlings (front of engines)
+            ctx.fillStyle = '#3a3a3a';
+            propPositions.forEach(prop => {
+                ctx.beginPath();
+                ctx.arc(prop.x, prop.y - 1, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Engine exhaust glow
+            ctx.fillStyle = '#553322';
+            propPositions.forEach(prop => {
+                ctx.beginPath();
+                ctx.arc(prop.x, prop.y - 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Main fuselage - cigar shaped bomber body
+            ctx.fillStyle = '#5a6a5a';
             ctx.beginPath();
-            ctx.moveTo(x + w/2, y + h - 5); // Front nose
-            ctx.lineTo(x + w - 5, y + h/2);
-            ctx.lineTo(x + w, y + 10);
-            ctx.lineTo(x + w - 10, y);
-            ctx.lineTo(x + 10, y);
-            ctx.lineTo(x, y + 10);
-            ctx.lineTo(x + 5, y + h/2);
+            ctx.moveTo(x + w/2, y + h + 2); // Nose
+            ctx.quadraticCurveTo(x + w/2 + 8, y + h - 5, x + w/2 + 6, y + h/2);
+            ctx.lineTo(x + w/2 + 5, y + 10);
+            ctx.quadraticCurveTo(x + w/2 + 4, y + 2, x + w/2, y);
+            ctx.quadraticCurveTo(x + w/2 - 4, y + 2, x + w/2 - 5, y + 10);
+            ctx.lineTo(x + w/2 - 6, y + h/2);
+            ctx.quadraticCurveTo(x + w/2 - 8, y + h - 5, x + w/2, y + h + 2);
             ctx.closePath();
             ctx.fill();
             
-            // Armor plating highlights
-            ctx.fillStyle = '#2a2a4e';
+            // Fuselage highlight
+            ctx.fillStyle = '#6a7a6a';
             ctx.beginPath();
-            ctx.moveTo(x + w/2, y + h - 10);
-            ctx.lineTo(x + w - 12, y + h/2);
-            ctx.lineTo(x + w - 8, y + 15);
-            ctx.lineTo(x + 8, y + 15);
-            ctx.lineTo(x + 12, y + h/2);
-            ctx.closePath();
+            ctx.moveTo(x + w/2, y + h);
+            ctx.quadraticCurveTo(x + w/2 + 5, y + h - 8, x + w/2 + 4, y + h/2);
+            ctx.lineTo(x + w/2 + 3, y + 12);
+            ctx.lineTo(x + w/2 - 3, y + 12);
+            ctx.lineTo(x + w/2 - 4, y + h/2);
+            ctx.quadraticCurveTo(x + w/2 - 5, y + h - 8, x + w/2, y + h);
             ctx.fill();
             
-            // Red accent stripes (danger markings)
-            ctx.fillStyle = '#cc0000';
-            ctx.fillRect(x + 5, y + 8, w - 10, 4);
-            ctx.fillRect(x + 10, y + 20, w - 20, 3);
-            
-            // Wing extensions
-            ctx.fillStyle = '#1a1a2e';
+            // Massive wings
+            ctx.fillStyle = '#5a6a5a';
             // Left wing
             ctx.beginPath();
-            ctx.moveTo(x, y + 10);
-            ctx.lineTo(x - 5, y + 20);
-            ctx.lineTo(x - 5, y + h/2 + 5);
-            ctx.lineTo(x + 5, y + h/2);
+            ctx.moveTo(x - 8, y + h/2 + 8);
+            ctx.lineTo(x - 5, y + h/2 - 2);
+            ctx.lineTo(x + w/2 - 5, y + h/2 - 3);
+            ctx.lineTo(x + w/2 - 5, y + h/2 + 6);
             ctx.closePath();
             ctx.fill();
             // Right wing
             ctx.beginPath();
-            ctx.moveTo(x + w, y + 10);
-            ctx.lineTo(x + w + 5, y + 20);
-            ctx.lineTo(x + w + 5, y + h/2 + 5);
-            ctx.lineTo(x + w - 5, y + h/2);
+            ctx.moveTo(x + w + 8, y + h/2 + 8);
+            ctx.lineTo(x + w + 5, y + h/2 - 2);
+            ctx.lineTo(x + w/2 + 5, y + h/2 - 3);
+            ctx.lineTo(x + w/2 + 5, y + h/2 + 6);
             ctx.closePath();
             ctx.fill();
             
-            // Weapon pods on wings
+            // Wing stripes (military markings)
+            ctx.fillStyle = '#3a4a3a';
+            ctx.fillRect(x - 5, y + h/2, 15, 3);
+            ctx.fillRect(x + w - 10, y + h/2, 15, 3);
+            
+            // Rising sun emblems on wings
+            ctx.fillStyle = '#cc0000';
+            ctx.beginPath();
+            ctx.arc(x + 5, y + h/2 + 2, 5, 0, Math.PI * 2);
+            ctx.arc(x + w - 5, y + h/2 + 2, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x + 5, y + h/2 + 2, 2, 0, Math.PI * 2);
+            ctx.arc(x + w - 5, y + h/2 + 2, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tail section
+            ctx.fillStyle = '#5a6a5a';
+            // Vertical stabilizer
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y);
+            ctx.lineTo(x + w/2 + 3, y + 8);
+            ctx.lineTo(x + w/2 - 3, y + 8);
+            ctx.closePath();
+            ctx.fill();
+            // Horizontal stabilizers
+            ctx.fillRect(x + w/2 - 12, y + 2, 24, 5);
+            
+            // Tail marking
+            ctx.fillStyle = '#cc0000';
+            ctx.fillRect(x + w/2 - 1, y, 2, 10);
+            
+            // Cockpit/greenhouse nose
+            ctx.fillStyle = '#3a4a5a';
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y + h + 2);
+            ctx.quadraticCurveTo(x + w/2 + 6, y + h - 4, x + w/2 + 5, y + h - 10);
+            ctx.lineTo(x + w/2 - 5, y + h - 10);
+            ctx.quadraticCurveTo(x + w/2 - 6, y + h - 4, x + w/2, y + h + 2);
+            ctx.fill();
+            
+            // Cockpit glass panels
+            ctx.fillStyle = '#7090a0';
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y + h);
+            ctx.lineTo(x + w/2 + 4, y + h - 6);
+            ctx.lineTo(x + w/2, y + h - 8);
+            ctx.lineTo(x + w/2 - 4, y + h - 6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Dorsal gun turret
+            ctx.fillStyle = '#4a4a4a';
+            ctx.beginPath();
+            ctx.arc(x + w/2, y + 18, 6, 0, Math.PI * 2);
+            ctx.fill();
             ctx.fillStyle = '#333';
-            ctx.fillRect(x - 3, y + 25, 6, 15);
-            ctx.fillRect(x + w - 3, y + 25, 6, 15);
-            ctx.fillStyle = '#ff4400';
             ctx.beginPath();
-            ctx.arc(x, y + 42, 3, 0, Math.PI * 2);
-            ctx.arc(x + w, y + 42, 3, 0, Math.PI * 2);
+            ctx.arc(x + w/2, y + 18, 4, 0, Math.PI * 2);
             ctx.fill();
-            
-            // Central command bridge
-            ctx.fillStyle = '#2d2d5e';
-            ctx.beginPath();
-            ctx.ellipse(x + w/2, y + h/2 + 5, 12, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Bridge windows (glowing)
-            const windowGlow = 0.7 + Math.sin(time / 150) * 0.3;
-            ctx.fillStyle = `rgba(255, 200, 0, ${windowGlow})`;
-            ctx.beginPath();
-            ctx.ellipse(x + w/2, y + h/2 + 5, 8, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.ellipse(x + w/2 - 2, y + h/2 + 3, 2, 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Forward cannon
-            ctx.fillStyle = '#444';
-            ctx.fillRect(x + w/2 - 4, y + h - 8, 8, 10);
+            // Gun barrel
             ctx.fillStyle = '#222';
+            ctx.fillRect(x + w/2 - 1, y + 20, 2, 8);
+            
+            // Ventral gun position
+            ctx.fillStyle = '#4a4a4a';
             ctx.beginPath();
-            ctx.arc(x + w/2, y + h, 4, 0, Math.PI * 2);
+            ctx.arc(x + w/2, y + h/2 + 10, 5, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = '#222';
+            ctx.fillRect(x + w/2 - 1, y + h/2 + 12, 2, 6);
+            
+            // Tail gunner
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(x + w/2, y + 6, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x + w/2 - 1, y, 2, 5);
+            
+            // Bomb bay doors (lines)
+            ctx.strokeStyle = '#3a4a3a';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x + w/2 - 4, y + h/2 - 5);
+            ctx.lineTo(x + w/2 - 4, y + h/2 + 15);
+            ctx.moveTo(x + w/2 + 4, y + h/2 - 5);
+            ctx.lineTo(x + w/2 + 4, y + h/2 + 15);
+            ctx.stroke();
             
             // Damage effects when low health
             if (hpPercent < 0.5) {
-                // Smoke/sparks
+                // Smoke trails from engines
                 for (let i = 0; i < 3; i++) {
-                    if (Math.random() > 0.7) {
+                    if (Math.random() > 0.5) {
+                        const smokeX = propPositions[Math.floor(Math.random() * 4)].x;
+                        const smokeY = y + Math.random() * 20;
+                        ctx.fillStyle = `rgba(50, 50, 50, ${0.3 + Math.random() * 0.3})`;
+                        ctx.beginPath();
+                        ctx.arc(smokeX + (Math.random() - 0.5) * 6, smokeY, 3 + Math.random() * 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                // Sparks
+                for (let i = 0; i < 2; i++) {
+                    if (Math.random() > 0.6) {
                         const sparkX = x + Math.random() * w;
                         const sparkY = y + Math.random() * h;
-                        ctx.fillStyle = Math.random() > 0.5 ? '#ff6600' : '#ffff00';
+                        ctx.fillStyle = '#ffaa00';
                         ctx.fillRect(sparkX, sparkY, 2, 2);
                     }
                 }
             }
             
             if (hpPercent < 0.25) {
-                // Fire/explosion effects
-                for (let i = 0; i < 2; i++) {
-                    const fireX = x + 10 + Math.random() * (w - 20);
-                    const fireY = y + 10 + Math.random() * (h - 20);
-                    const fireSize = 4 + Math.random() * 4;
-                    ctx.fillStyle = `rgba(255, ${Math.floor(Math.random() * 100)}, 0, 0.7)`;
+                // Fire from damaged engines
+                const damagedEngine = propPositions[Math.floor(time / 500) % 4];
+                const flameSize = 5 + Math.sin(time / 50) * 3;
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath();
+                ctx.arc(damagedEngine.x, damagedEngine.y - 8, flameSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath();
+                ctx.arc(damagedEngine.x, damagedEngine.y - 10, flameSize * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // More smoke
+                for (let i = 0; i < 3; i++) {
+                    const smokeX = x + 10 + Math.random() * (w - 20);
+                    const smokeY = y + Math.random() * h;
+                    ctx.fillStyle = `rgba(30, 30, 30, ${0.4 + Math.random() * 0.3})`;
                     ctx.beginPath();
-                    ctx.arc(fireX, fireY, fireSize, 0, Math.PI * 2);
+                    ctx.arc(smokeX, smokeY, 4 + Math.random() * 5, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
@@ -1285,42 +1543,49 @@
             // Health bar (above boss)
             const barWidth = w + 20;
             const barX = x - 10;
-            const barY = y - 15;
+            const barY = y - 18;
             
             // Bar background
-            ctx.fillStyle = '#222';
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(barX - 2, barY - 2, barWidth + 4, 12);
+            ctx.fillStyle = '#333';
             ctx.fillRect(barX, barY, barWidth, 8);
-            
-            // Bar border
-            ctx.strokeStyle = '#666';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(barX, barY, barWidth, 8);
             
             // Health fill with gradient
             const healthGrad = ctx.createLinearGradient(barX, barY, barX + barWidth * hpPercent, barY);
             if (hpPercent > 0.5) {
-                healthGrad.addColorStop(0, '#00ff00');
-                healthGrad.addColorStop(1, '#00cc00');
+                healthGrad.addColorStop(0, '#00dd00');
+                healthGrad.addColorStop(1, '#00aa00');
             } else if (hpPercent > 0.25) {
-                healthGrad.addColorStop(0, '#ffff00');
-                healthGrad.addColorStop(1, '#ffaa00');
+                healthGrad.addColorStop(0, '#dddd00');
+                healthGrad.addColorStop(1, '#aa8800');
             } else {
-                healthGrad.addColorStop(0, '#ff0000');
-                healthGrad.addColorStop(1, '#cc0000');
+                healthGrad.addColorStop(0, '#dd0000');
+                healthGrad.addColorStop(1, '#990000');
             }
             ctx.fillStyle = healthGrad;
             ctx.fillRect(barX + 1, barY + 1, (barWidth - 2) * hpPercent, 6);
             
-            // "BOSS" label
-            ctx.fillStyle = '#ff4444';
-            ctx.font = '6px Press Start 2P';
+            // Health bar segments
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(barX + (barWidth / 10) * i, barY);
+                ctx.lineTo(barX + (barWidth / 10) * i, barY + 8);
+                ctx.stroke();
+            }
+            
+            // "HEAVY BOMBER" label
+            ctx.fillStyle = '#ff6644';
+            ctx.font = '5px Press Start 2P';
             ctx.textAlign = 'center';
-            ctx.fillText('BOSS', x + w/2, barY - 3);
+            ctx.fillText('HEAVY BOMBER', x + w/2, barY - 4);
             
             // Hit flash
             if (boss.hitFlash > 0) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${boss.hitFlash / 10})`;
-                ctx.fillRect(x - 5, y, w + 10, h);
+                ctx.fillStyle = `rgba(255, 255, 255, ${boss.hitFlash / 8})`;
+                ctx.fillRect(x - 10, y - 5, w + 20, h + 10);
             }
         }
         
