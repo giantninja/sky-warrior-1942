@@ -1325,16 +1325,92 @@
         }
         
         function drawBullet(bullet) {
+            const time = Date.now();
+            
             if (bullet.isEnemy) {
-                ctx.fillStyle = COLORS.bullet;
+                // Enemy bullets - menacing red/orange energy balls
+                const size = bullet.size;
+                const pulseSize = size + Math.sin(time / 50) * 1;
+                
+                // Outer glow
+                const gradient = ctx.createRadialGradient(
+                    bullet.x, bullet.y, 0,
+                    bullet.x, bullet.y, pulseSize * 2
+                );
+                gradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');
+                gradient.addColorStop(0.3, 'rgba(255, 150, 0, 0.6)');
+                gradient.addColorStop(0.6, 'rgba(255, 50, 0, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                ctx.arc(bullet.x, bullet.y, pulseSize * 2, 0, Math.PI * 2);
                 ctx.fill();
-            } else {
-                ctx.fillStyle = COLORS.bulletPlayer;
-                ctx.fillRect(bullet.x - 2, bullet.y, 4, 10);
+                
+                // Core
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(bullet.x - 1, bullet.y, 2, 6);
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, pulseSize * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Inner ring
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, pulseSize * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Motion trail
+                ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
+                ctx.beginPath();
+                ctx.ellipse(bullet.x, bullet.y - size, size * 0.6, size * 1.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+            } else {
+                // Player bullets - cool cyan/blue energy bolts
+                const bx = bullet.x;
+                const by = bullet.y;
+                const size = bullet.size || 4;
+                
+                // Glow trail
+                const trailGradient = ctx.createLinearGradient(bx, by + 15, bx, by - 5);
+                trailGradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
+                trailGradient.addColorStop(0.3, 'rgba(0, 255, 255, 0.3)');
+                trailGradient.addColorStop(1, 'rgba(100, 255, 255, 0.8)');
+                ctx.fillStyle = trailGradient;
+                ctx.beginPath();
+                ctx.moveTo(bx - 3, by + 12);
+                ctx.lineTo(bx, by - 4);
+                ctx.lineTo(bx + 3, by + 12);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Outer glow
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.ellipse(bx, by, 4, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Main bolt body
+                ctx.fillStyle = '#00ffff';
+                ctx.beginPath();
+                ctx.moveTo(bx, by - 6);
+                ctx.lineTo(bx + 2, by);
+                ctx.lineTo(bx + 1, by + 6);
+                ctx.lineTo(bx - 1, by + 6);
+                ctx.lineTo(bx - 2, by);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Bright core
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(bx, by - 2, 1, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Tip glow
+                ctx.fillStyle = '#aaffff';
+                ctx.beginPath();
+                ctx.arc(bx, by - 5, 2, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
         
