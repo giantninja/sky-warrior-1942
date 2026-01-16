@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SKY WARRIOR 1942</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -13,14 +13,24 @@
             box-sizing: border-box;
         }
         
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            /* Use dvh for mobile, fallback to vh */
+            min-height: 100dvh;
+            min-height: 100vh;
+        }
+        
         body {
             background: #0a0a12;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             font-family: 'Press Start 2P', cursive;
             overflow: hidden;
+            /* Prevent pull-to-refresh on mobile */
+            overscroll-behavior: none;
         }
         
         .game-container {
@@ -209,6 +219,43 @@
             display: none;
         }
         
+        /* Mobile bomb button */
+        .mobile-bomb-btn {
+            display: none;
+            position: fixed;
+            bottom: 120px;
+            left: 20px;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: rgba(255, 100, 0, 0.85);
+            border: 3px solid #ff6600;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            z-index: 50;
+            box-shadow: 0 0 15px rgba(255, 100, 0, 0.5);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .mobile-bomb-btn:active {
+            background: rgba(255, 150, 50, 0.9);
+            transform: scale(0.95);
+        }
+        
+        /* Show mobile controls on touch devices */
+        @media (pointer: coarse) {
+            .mobile-bomb-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+        }
+        
         /* Help Overlay */
         #helpOverlay {
             position: absolute;
@@ -319,6 +366,9 @@
         
         <button class="fullscreen-btn" id="fullscreenBtn">FULLSCREEN</button>
         
+        <!-- Mobile bomb button -->
+        <button class="mobile-bomb-btn" id="mobileBombBtn">💣 BOMB</button>
+        
         <div id="startScreen">
             <div class="title">SKY WARRIOR</div>
             <div class="subtitle">- 1942 -</div>
@@ -337,7 +387,7 @@
                 SHIFT / SPACE - SHOOT | Z - BOMB<br>
                 P - PAUSE | M - MUSIC | ESC - HELP
             </div>
-            <div class="start-prompt">PRESS SPACE OR CLICK TO START</div>
+            <div class="start-prompt">PRESS SPACE OR TAP TO START</div>
         </div>
         
         <div id="gameOverScreen">
@@ -436,9 +486,14 @@
         let WIDTH, HEIGHT;
         
         function resizeCanvas() {
-            // Width capped at 1200px, height fills available space
-            let newWidth = Math.min(window.innerWidth, 1200);
-            let newHeight = window.innerHeight;
+            // Use visualViewport for accurate mobile dimensions (accounts for browser UI)
+            const vv = window.visualViewport;
+            const viewWidth = vv ? vv.width : window.innerWidth;
+            const viewHeight = vv ? vv.height : window.innerHeight;
+            
+            // Width capped at 1200px, height uses available visual viewport
+            let newWidth = Math.min(viewWidth, 1200);
+            let newHeight = viewHeight;
             
             // Set internal resolution (scaled down for performance, rendered up)
             const internalScale = 0.5; // Internal resolution scale
@@ -455,7 +510,7 @@
             // Update player bounds if player exists (check window to avoid TDZ error)
             if (window.playerInitialized) {
                 player.x = Math.min(player.x, WIDTH - player.width);
-                player.y = Math.min(player.y, HEIGHT - player.height - 20);
+                player.y = Math.min(player.y, HEIGHT - player.height - 35);
             }
         }
         
@@ -464,6 +519,10 @@
         
         // Resize on window change
         window.addEventListener('resize', resizeCanvas);
+        // Also listen to visualViewport for mobile browser UI changes
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', resizeCanvas);
+        }
         
         // Fullscreen and Help overlay elements
         const gameContainer = document.getElementById('gameContainer');
@@ -822,7 +881,7 @@
         // Player
         const player = {
             x: WIDTH / 2,
-            y: HEIGHT - 60,
+            y: HEIGHT - 100,
             width: 24,
             height: 28,
             speed: 4,
@@ -2463,13 +2522,14 @@
             ctx.fillText('HP', healthBarX + healthBarWidth + 5, healthBarY + 7);
             ctx.font = '8px Press Start 2P';
             
-            // Lives
+            // Lives (moved up for mobile safe area)
+            const bottomPadding = 15; // Extra padding for mobile browsers
             ctx.fillStyle = COLORS.hud;
-            ctx.fillText('LIVES', 10, HEIGHT - 25);
+            ctx.fillText('LIVES', 10, HEIGHT - 25 - bottomPadding);
             for (let i = 0; i < player.lives; i++) {
                 // Mini ship icon for lives
                 const lx = 65 + i * 18;
-                const ly = HEIGHT - 30;
+                const ly = HEIGHT - 30 - bottomPadding;
                 ctx.fillStyle = '#4ecdc4';
                 ctx.beginPath();
                 ctx.moveTo(lx, ly - 5);
@@ -2485,24 +2545,24 @@
             
             // Bombs
             ctx.fillStyle = COLORS.hud;
-            ctx.fillText('BOMB', 10, HEIGHT - 8);
+            ctx.fillText('BOMB', 10, HEIGHT - 8 - bottomPadding);
             ctx.fillStyle = '#ff6600';
             for (let i = 0; i < player.bombs; i++) {
                 ctx.beginPath();
-                ctx.arc(65 + i * 15, HEIGHT - 10, 5, 0, Math.PI * 2);
+                ctx.arc(65 + i * 15, HEIGHT - 10 - bottomPadding, 5, 0, Math.PI * 2);
                 ctx.fill();
             }
             
             // Wave indicator
             ctx.fillStyle = COLORS.hud;
             ctx.textAlign = 'right';
-            ctx.fillText('WAVE ' + wave, WIDTH - 10, HEIGHT - 10);
+            ctx.fillText('WAVE ' + wave, WIDTH - 10, HEIGHT - 10 - bottomPadding);
             
             // Power level
             if (player.powerLevel > 1) {
                 ctx.fillStyle = '#00ff00';
                 ctx.textAlign = 'center';
-                ctx.fillText('POW:' + player.powerLevel, WIDTH / 2, HEIGHT - 10);
+                ctx.fillText('POW:' + player.powerLevel, WIDTH / 2, HEIGHT - 10 - bottomPadding);
             }
             
             // Music indicator (top right, below high score)
@@ -2994,9 +3054,9 @@
             player.x += dx * player.speed;
             player.y += dy * player.speed;
             
-            // Bounds
+            // Bounds (extra bottom padding for mobile HUD safe area)
             player.x = Math.max(0, Math.min(WIDTH - player.width, player.x));
-            player.y = Math.max(50, Math.min(HEIGHT - player.height - 20, player.y));
+            player.y = Math.max(50, Math.min(HEIGHT - player.height - 35, player.y));
             
             // Shooting
             if (keys['Space'] || keys['ShiftLeft'] || keys['ShiftRight']) {
@@ -3539,7 +3599,7 @@
             spawnTimeouts = [];
             
             player.x = WIDTH / 2 - player.width / 2;
-            player.y = HEIGHT - 60;
+            player.y = HEIGHT - 100;
             player.lives = 3;
             player.bombs = 3;
             player.health = player.maxHealth;
@@ -3761,6 +3821,112 @@
                 e.preventDefault();
             }
         });
+        
+        // ============================================
+        // Mobile Touch Controls
+        // ============================================
+        
+        let touchActive = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let playerStartX = 0;
+        let playerStartY = 0;
+        
+        const mobileBombBtn = document.getElementById('mobileBombBtn');
+        
+        // Get canvas position for touch coordinate conversion
+        function getTouchPos(touch) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = WIDTH / rect.width;
+            const scaleY = HEIGHT / rect.height;
+            return {
+                x: (touch.clientX - rect.left) * scaleX,
+                y: (touch.clientY - rect.top) * scaleY
+            };
+        }
+        
+        // Touch start - begin tracking and auto-shooting
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            
+            if (gameState === 'start' || gameState === 'gameover') {
+                startGame();
+                return;
+            }
+            
+            if (gameState !== 'playing') return;
+            
+            const touch = e.touches[0];
+            const pos = getTouchPos(touch);
+            
+            touchActive = true;
+            touchStartX = pos.x;
+            touchStartY = pos.y;
+            playerStartX = player.x;
+            playerStartY = player.y;
+            
+            // Enable auto-shooting while touching
+            keys['Space'] = true;
+        }, { passive: false });
+        
+        // Touch move - move player relative to touch movement
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            
+            if (!touchActive || gameState !== 'playing') return;
+            
+            const touch = e.touches[0];
+            const pos = getTouchPos(touch);
+            
+            // Calculate delta from touch start
+            const deltaX = pos.x - touchStartX;
+            const deltaY = pos.y - touchStartY;
+            
+            // Move player relative to start position (with sensitivity multiplier)
+            const sensitivity = 1.2;
+            player.x = playerStartX + deltaX * sensitivity;
+            player.y = playerStartY + deltaY * sensitivity;
+            
+            // Keep player in bounds (extra bottom padding for mobile HUD)
+            player.x = Math.max(0, Math.min(WIDTH - player.width, player.x));
+            player.y = Math.max(50, Math.min(HEIGHT - player.height - 35, player.y));
+        }, { passive: false });
+        
+        // Touch end - stop shooting
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchActive = false;
+            keys['Space'] = false;
+        }, { passive: false });
+        
+        canvas.addEventListener('touchcancel', (e) => {
+            touchActive = false;
+            keys['Space'] = false;
+        });
+        
+        // Mobile bomb button
+        mobileBombBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (gameState === 'playing') {
+                useBomb();
+            }
+        }, { passive: false });
+        
+        mobileBombBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (gameState === 'playing') {
+                useBomb();
+            }
+        });
+        
+        // Prevent default touch behavior on game container
+        gameContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
         
         // ============================================
         // Start
